@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TaskFlow – Task Management App</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:15px;color:#111;background:#F5F5F5}
+input,select,textarea{font-family:inherit;font-size:14px;color:#111;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px 12px;width:100%;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+textarea{resize:vertical;min-height:72px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#111;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:#f5f5f5}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:#4F46E5;color:#fff;border-color:#4F46E5}
+.btn-primary:hover{background:#4338CA;border-color:#4338CA}
+.btn-danger{background:#FEF2F2;color:#991B1B;border-color:#FCA5A5}
+.btn-danger:hover{background:#FEE2E2}
+.btn-sm{padding:5px 10px;font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-todo{background:#EEF2FF;color:#3730A3}
+.badge-in-progress{background:#FFF7ED;color:#C2410C}
+.badge-done{background:#F0FDF4;color:#166534}
+.badge-high{background:#FEF2F2;color:#991B1B}
+.badge-medium{background:#FFF7ED;color:#C2410C}
+.badge-low{background:#F0FDF4;color:#166534}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.modal{background:#fff;border-radius:12px;border:1px solid #e5e5e5;width:100%;max-width:480px;padding:1.5rem;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-title{font-size:16px;font-weight:500}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nav{background:#fff;border-bottom:1px solid #eee;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:50}
+.nav-brand{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;color:#111}
+.nav-brand i{color:#4F46E5;font-size:20px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#3730A3}
+.main{flex:1;padding:1.5rem;max-width:1100px;width:100%;margin:0 auto}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+.page-title{font-size:20px;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1.5rem}
+.stat-card{background:#F9F9F9;border-radius:8px;padding:.875rem 1rem}
+.stat-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:600}
+.filters{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap}
+.filter-chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid #ddd;background:#fff;cursor:pointer;transition:all .15s;color:#666}
+.filter-chip:hover,.filter-chip.active{background:#4F46E5;color:#fff;border-color:#4F46E5}
+.tasks-list{display:flex;flex-direction:column;gap:8px}
+.task-card{background:#fff;border:1px solid #eee;border-radius:12px;padding:.875rem 1.25rem;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:border-color .15s}
+.task-card:hover{border-color:#c7c7ff}
+.task-card.selected{border-color:#4F46E5}
+.task-card.done-card{opacity:.65}
+.task-check{width:18px;height:18px;border-radius:50%;border:1.5px solid #ccc;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:1px;transition:all .15s}
+.task-check.checked{background:#4F46E5;border-color:#4F46E5;color:#fff}
+.task-check:hover{border-color:#4F46E5}
+.task-content{flex:1;min-width:0}
+.task-title{font-size:14px;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.task-title.done{text-decoration:line-through;color:#aaa}
+.task-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.task-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.task-card:hover .task-actions{opacity:1}
+.task-desc{font-size:13px;color:#666;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.due-date{font-size:11px;color:#aaa;display:flex;align-items:center;gap:3px}
+.due-overdue{color:#DC2626}
+.empty-state{text-align:center;padding:3rem 1rem;color:#888}
+.empty-state i{font-size:40px;margin-bottom:.75rem;display:block;opacity:.4}
+.search-bar{position:relative;flex:1;min-width:180px;max-width:280px}
+.search-bar input{padding-left:34px}
+.search-bar i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:#aaa;pointer-events:none}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;background:#f5f5f5;color:#666;border:1px solid #eee}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#fff;border:1px solid #ddd;border-radius:8px;padding:.75rem 1rem;font-size:13px;display:flex;align-items:center;gap:8px;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.1);animation:slideIn .2s ease}
+@keyframes slideIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.progress-bar{height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:#4F46E5;border-radius:2px;transition:width .4s ease}
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F5F5F5;padding:1rem}
+.auth-card{background:#fff;border:1px solid #eee;border-radius:12px;padding:2rem;width:100%;max-width:380px}
+.auth-logo{text-align:center;margin-bottom:1.5rem}
+.auth-logo i{font-size:36px;color:#4F46E5}
+.auth-logo h1{font-size:20px;font-weight:600;margin-top:.5rem}
+.auth-logo p{font-size:13px;color:#888;margin-top:4px}
+.auth-tabs{display:flex;border-bottom:1px solid #eee;margin-bottom:1.25rem}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#888;transition:all .15s;margin-bottom:-1px}
+.auth-tab.active{color:#4F46E5;border-bottom-color:#4F46E5}
+.demo-hint{background:#EEF2FF;border-radius:8px;padding:.75rem;font-size:12px;color:#3730A3;margin-top:1rem;text-align:center}
+.section-title{font-size:12px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+.detail-panel{background:#fff;border-left:1px solid #eee;width:320px;padding:1.5rem;overflow-y:auto;flex-shrink:0}
+.layout-wrap{display:flex;flex:1;min-height:calc(100vh - 52px)}
+.tasks-col{flex:1;overflow-y:auto;padding:1.5rem;min-width:0}
+.err-msg{color:#DC2626;font-size:13px;margin-bottom:.75rem}
+@media(max-width:640px){.form-row{grid-template-columns:1fr}.detail-panel{display:none}.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React 18 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<script>
+/* ─────────────────────────────────────────
+   TASKFLOW — Full-stack Task Manager
+   Stack : React 18 (UMD) + localStorage
+   Auth  : email/password (client-side demo)
+   CRUD  : create / read / update / delete
+   ───────────────────────────────────────── */
+
+const {useState, useEffect, useRef, useCallback} = React;
+
+/* ── Seed data ── */
+const SEED_USERS = [
+  {id:'u1', name:'Alex Chen',   email:'alex@demo.com',   password:'demo123', avatar:'AC'},
+  {id:'u2', name:'Jordan Lee',  email:'jordan@demo.com', password:'demo123', avatar:'JL'},
+];
+
+const seedTasks = uid => [
+  {id:'t1', title:'Design new landing page',  description:'Create wireframes and high-fidelity mockups for the revamped homepage.',       status:'in-progress', priority:'high',   category:'Design',      dueDate:'2026-06-15', createdAt:Date.now()-864e5*3, userId:uid},
+  {id:'t2', title:'Set up CI/CD pipeline',    description:'Configure GitHub Actions for automated testing and deployment.',               status:'todo',        priority:'high',   category:'DevOps',      dueDate:'2026-06-20', createdAt:Date.now()-864e5*2, userId:uid},
+  {id:'t3', title:'Write API documentation',  description:'Document all REST endpoints using the OpenAPI specification.',                 status:'todo',        priority:'medium', category:'Docs',        dueDate:'2026-06-25', createdAt:Date.now()-864e5,   userId:uid},
+  {id:'t4', title:'Fix login bug on Safari',  description:'Users report authentication failing on Safari 16+.',                           status:'done',        priority:'high',   category:'Bug',         dueDate:'2026-06-10', createdAt:Date.now()-864e5*5, userId:uid},
+  {id:'t5', title:'Performance audit',        description:'Run Lighthouse audits and identify the top 3 bottlenecks.',                   status:'in-progress', priority:'medium', category:'Dev',         dueDate:'2026-06-18', createdAt:Date.now()-864e5,   userId:uid},
+  {id:'t6', title:'Update dependencies',      description:'Bump all npm packages to the latest stable versions.',                        status:'done',        priority:'low',    category:'Maintenance', dueDate:'2026-06-08', createdAt:Date.now()-864e5*6, userId:uid},
+];
+
+/* ── localStorage hook ── */
+function useLS(key, init) {
+  const [val, setVal] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; }
+    catch { return init; }
+  });
+  const set = useCallback(v => {
+    const nv = typeof v === 'function' ? v(val) : v;
+    setVal(nv);
+    try { localStorage.setItem(key, JSON.stringify(nv)); } catch {}
+  }, [key]);
+  return [val, set];
+}
+
+/* ── Toast ── */
+function Toast({msg, type, onDone}) {
+  useEffect(() => { const t = setTimeout(onDone, 2600); return () => clearTimeout(t); }, []);
+  const icon = type === 'success' ? 'ti-circle-check' : type === 'error' ? 'ti-circle-x' : 'ti-info-circle';
+  const color = type === 'success' ? '#16A34A' : type === 'error' ? '#DC2626' : '#2563EB';
+  return e('div', {className:'toast'},
+    e('i', {className:`ti ${icon}`, style:{color, fontSize:18}}),
+    e('span', null, msg)
+  );
+}
+
+/* ── Auth Page ── */
+function AuthPage({onLogin}) {
+  const [tab,   setTab]  = useState('login');
+  const [form,  setForm] = useState({name:'', email:'', password:''});
+  const [err,   setErr]  = useState('');
+  const up = f => setForm(p => ({...p, ...f}));
+
+  function submit() {
+    setErr('');
+    const users = JSON.parse(localStorage.getItem('tf_users') || '[]');
+    const allUsers = [...SEED_USERS, ...users];
+    if (tab === 'login') {
+      const u = allUsers.find(x => x.email === form.email && x.password === form.password);
+      if (!u) { setErr('Invalid email or password.'); return; }
+      onLogin(u);
+    } else {
+      if (!form.name || !form.email || !form.password) { setErr('All fields are required.'); return; }
+      if (form.password.length < 6) { setErr('Password must be at least 6 characters.'); return; }
+      if (allUsers.find(x => x.email === form.email)) { setErr('Email already registered.'); return; }
+      const nu = {id:'u'+Date.now(), name:form.name, email:form.email, password:form.password,
+                  avatar:form.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()};
+      const existing = JSON.parse(localStorage.getItem('tf_users') || '[]');
+      localStorage.setItem('tf_users', JSON.stringify([...existing, nu]));
+      onLogin(nu);
+    }
+  }
+
+  return e('div', {className:'auth-wrap'},
+    e('div', {className:'auth-card'},
+      e('div', {className:'auth-logo'},
+        e('i', {className:'ti ti-stack-2'}),
+        e('h1', null, 'TaskFlow'),
+        e('p',  null, 'Organize your work, ship faster')
+      ),
+      e('div', {className:'auth-tabs'},
+        e('div', {className:'auth-tab'+(tab==='login'?' active':''), onClick:()=>setTab('login')}, 'Sign in'),
+        e('div', {className:'auth-tab'+(tab==='register'?' active':''), onClick:()=>setTab('register')}, 'Create account')
+      ),
+      tab === 'register' && e('div', {className:'form-group'},
+        e('label', {className:'form-label'}, 'Full name'),
+        e('input', {type:'text', placeholder:'Your full name', value:form.name,
+                    onChange:ev=>up({name:ev.target.value}), onKeyDown:ev=>ev.key==='Enter'&&submit()})
+      ),
+      e('div', {className:'form-group'},
+        e('label', {className:'form-label'}, 'Email'),
+        e('input', {type:'email', placeholder:'you@example.com', value:form.email,
+                    onChange:ev=>up({email:ev.target.value}), onKeyDown:ev=>ev.key==='Enter'&&submit()})
+      ),
+      e('div', {className:'form-group'},
+        e('label', {className:'form-label'}, 'Password'),
+        e('input', {type:'password', placeholder:'••••••••', value:form.password,
+                    onChange:ev=>up({password:ev.target.value}), onKeyDown:ev=>ev.key==='Enter'&&submit()})
+      ),
+      err && e('p', {className:'err-msg'}, err),
+      e('button', {className:'btn btn-primary', style:{width:'100%',justifyContent:'center'}, onClick:submit},
+        tab === 'login' ? 'Sign in' : 'Create account'
+      ),
+      e('div', {className:'demo-hint'},
+        e('i', {className:'ti ti-bulb', style:{marginRight:4}}),
+        'Demo: alex@demo.com / demo123'
+      )
+    )
+  );
+}
+
+/* ── Task Form Modal ── */
+function TaskModal({task, onSave, onClose}) {
+  const blank = {title:'', description:'', status:'todo', priority:'medium', category:'', dueDate:''};
+  const [form, setForm] = useState(task ? {...task} : blank);
+  const [err, setErr] = useState('');
+  const up = f => setForm(p => ({...p, ...f}));
+
+  function save() {
+    if (!form.title.trim()) { setErr('Title is required.'); return; }
+    onSave(form);
+  }
+
+  return e('div', {className:'modal-backdrop', onClick:ev=>ev.target===ev.currentTarget&&onClose()},
+    e('div', {className:'modal'},
+      e('div', {className:'modal-header'},
+        e('span', {className:'modal-title'}, task ? 'Edit task' : 'New task'),
+        e('button', {className:'btn btn-sm', onClick:onClose}, e('i', {className:'ti ti-x'}))
+      ),
+      e('div', {className:'form-group'},
+        e('label', {className:'form-label'}, 'Title *'),
+        e('input', {type:'text', placeholder:'What needs to be done?', value:form.title, autoFocus:true,
+                    onChange:ev=>up({title:ev.target.value})})
+      ),
+      e('div', {className:'form-group'},
+        e('label', {className:'form-label'}, 'Description'),
+        e('textarea', {placeholder:'Add more details...', value:form.description,
+                       onChange:ev=>up({description:ev.target.value})})
+      ),
+      e('div', {className:'form-row'},
+        e('div', {className:'form-group'},
+          e('label', {className:'form-label'}, 'Status'),
+          e('select', {value:form.status, onChange:ev=>up({status:ev.target.value})},
+            e('option', {value:'todo'},        'To do'),
+            e('option', {value:'in-progress'}, 'In progress'),
+            e('option', {value:'done'},         'Done')
+          )
+        ),
+        e('div', {className:'form-group'},
+          e('label', {className:'form-label'}, 'Priority'),
+          e('select', {value:form.priority, onChange:ev=>up({priority:ev.target.value})},
+            e('option', {value:'high'},   'High'),
+            e('option', {value:'medium'}, 'Medium'),
+            e('option', {value:'low'},    'Low')
+          )
+        )
+      ),
+      e('div', {className:'form-row'},
+        e('div', {className:'form-group'},
+          e('label', {className:'form-label'}, 'Category'),
+          e('input', {type:'text', placeholder:'e.g. Design, Dev, Bug…', value:form.category,
+                      onChange:ev=>up({category:ev.target.value})})
+        ),
+        e('div', {className:'form-group'},
+          e('label', {className:'form-label'}, 'Due date'),
+          e('input', {type:'date', value:form.dueDate, onChange:ev=>up({dueDate:ev.target.value})})
+        )
+      ),
+      err && e('p', {className:'err-msg'}, err),
+      e('div', {style:{display:'flex', gap:8, justifyContent:'flex-end'}},
+        e('button', {className:'btn', onClick:onClose}, 'Cancel'),
+        e('button', {className:'btn btn-primary', onClick:save}, task ? 'Save changes' : 'Add task')
+      )
+    )
+  );
+}
+
+/* ── Single Task Row ── */
+function TaskCard({task, onToggle, onEdit, onDelete, onSelect, selected}) {
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = task.dueDate && task.dueDate < today && task.status !== 'done';
+
+  return e('div', {
+    className:'task-card'+(task.status==='done'?' done-card':'')+(selected?' selected':''),
+    onClick:()=>onSelect(task)
+  },
+    e('div', {className:'task-check'+(task.status==='done'?' checked':''),
+              onClick:ev=>{ev.stopPropagation(); onToggle(task.id)}},
+      task.status === 'done' && e('i', {className:'ti ti-check', style:{fontSize:11}})
+    ),
+    e('div', {className:'task-content'},
+      e('div', {className:'task-title'+(task.status==='done'?' done':'')},
+        task.title,
+        e('span', {className:`badge badge-${task.priority}`}, task.priority)
+      ),
+      task.description && e('div', {className:'task-desc'}, task.description),
+      e('div', {className:'task-meta'},
+        e('span', {className:`badge badge-${task.status}`},
+          task.status === 'in-progress' ? 'In progress' : task.status === 'todo' ? 'To do' : 'Done'
+        ),
+        task.category && e('span', {className:'tag'}, task.category),
+        task.dueDate  && e('span', {className:'due-date'+(overdue?' due-overdue':'')},
+          e('i', {className:'ti ti-calendar', style:{fontSize:12}}), ' ', task.dueDate
+        )
+      )
+    ),
+    e('div', {className:'task-actions'},
+      e('button', {className:'btn btn-sm', title:'Edit',
+                   onClick:ev=>{ev.stopPropagation(); onEdit(task)}},
+        e('i', {className:'ti ti-edit', style:{fontSize:14}})
+      ),
+      e('button', {className:'btn btn-sm btn-danger', title:'Delete',
+                   onClick:ev=>{ev.stopPropagation(); onDelete(task.id)}},
+        e('i', {className:'ti ti-trash', style:{fontSize:14}})
+      )
+    )
+  );
+}
+
+/* ── Detail Side Panel ── */
+function DetailPanel({task, onEdit, onDelete, onToggle, onClose}) {
+  if (!task) return null;
+  const today   = new Date().toISOString().split('T')[0];
+  const overdue = task.dueDate && task.dueDate < today && task.status !== 'done';
+
+  return e('div', {className:'detail-panel'},
+    e('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'1rem'}},
+      e('span', {className:'section-title', style:{margin:0}}, 'Task details'),
+      e('button', {className:'btn btn-sm', onClick:onClose}, e('i', {className:'ti ti-x'}))
+    ),
+    e('h2', {style:{fontSize:16,fontWeight:600,marginBottom:'.75rem',lineHeight:1.4}}, task.title),
+    e('div', {style:{display:'flex',gap:6,marginBottom:'1rem',flexWrap:'wrap'}},
+      e('span', {className:`badge badge-${task.status}`},
+        task.status==='in-progress'?'In progress':task.status==='todo'?'To do':'Done'),
+      e('span', {className:`badge badge-${task.priority}`}, task.priority+' priority')
+    ),
+    task.description && e('div', null,
+      e('p', {className:'section-title'}, 'Description'),
+      e('p', {style:{fontSize:13,color:'#555',lineHeight:1.65,marginBottom:'1rem'}}, task.description)
+    ),
+    e('div', {style:{display:'flex',flexDirection:'column',gap:8,marginBottom:'1.25rem'}},
+      task.category && e('div', {style:{display:'flex',justifyContent:'space-between',fontSize:13}},
+        e('span', {style:{color:'#888'}}, 'Category'),
+        e('span', {className:'tag'}, task.category)
+      ),
+      task.dueDate && e('div', {style:{display:'flex',justifyContent:'space-between',fontSize:13}},
+        e('span', {style:{color:'#888'}}, 'Due date'),
+        e('span', {style:{color:overdue?'#DC2626':'inherit'}}, task.dueDate+(overdue?' (overdue)':''))
+      ),
+      e('div', {style:{display:'flex',justifyContent:'space-between',fontSize:13}},
+        e('span', {style:{color:'#888'}}, 'Created'),
+        e('span', null, new Date(task.createdAt).toLocaleDateString())
+      )
+    ),
+    e('div', {style:{display:'flex',gap:8,flexDirection:'column'}},
+      e('button', {className:'btn', style:{justifyContent:'center'}, onClick:()=>onToggle(task.id)},
+        task.status === 'done'
+          ? e(React.Fragment,null, e('i',{className:'ti ti-rotate-ccw'}), 'Mark as to do')
+          : e(React.Fragment,null, e('i',{className:'ti ti-circle-check'}), 'Mark as done')
+      ),
+      e('button', {className:'btn btn-primary', style:{justifyContent:'center'}, onClick:()=>onEdit(task)},
+        e('i',{className:'ti ti-edit'}), 'Edit task'
+      ),
+      e('button', {className:'btn btn-danger', style:{justifyContent:'center'},
+                   onClick:()=>{onDelete(task.id); onClose()}},
+        e('i',{className:'ti ti-trash'}), 'Delete task'
+      )
+    )
+  );
+}
+
+/* ── Root App ── */
+function App() {
+  const [currentUser, setCurrentUser] = useLS('tf_current', null);
+  const [tasks,       setTasks]       = useLS('tf_tasks',   []);
+  const [modal,    setModal]    = useState(null);
+  const [editTask, setEditTask] = useState(null);
+  const [filter,   setFilter]   = useState('all');
+  const [sortBy,   setSortBy]   = useState('created');
+  const [search,   setSearch]   = useState('');
+  const [toast,    setToast]    = useState(null);
+  const [selected, setSelected] = useState(null);
+
+  const showToast = (msg, type='success') => setToast({msg, type});
+
+  /* ── Auth handlers ── */
+  function handleLogin(user) {
+    setCurrentUser(user);
+    const mine = tasks.filter(t => t.userId === user.id);
+    if (mine.length === 0) setTasks(prev => [...prev, ...seedTasks(user.id)]);
+    showToast(`Welcome back, ${user.name.split(' ')[0]}!`);
+  }
+  function handleLogout() { setCurrentUser(null); setSelected(null); }
+
+  /* ── CRUD handlers ── */
+  function handleSave(form) {
+    if (editTask) {
+      setTasks(prev => prev.map(t => t.id === editTask.id ? {...t, ...form} : t));
+      if (selected?.id === editTask.id) setSelected({...selected, ...form});
+      showToast('Task updated');
+    } else {
+      const nt = {...form, id:'t'+Date.now(), createdAt:Date.now(), userId:currentUser.id};
+      setTasks(prev => [nt, ...prev]);
+      showToast('Task added');
+    }
+    setModal(null); setEditTask(null);
+  }
+
+  function handleToggle(id) {
+    setTasks(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const ns = t.status === 'done' ? 'todo' : 'done';
+      if (selected?.id === id) setSelected({...t, status:ns});
+      return {...t, status:ns};
+    }));
+  }
+
+  function handleDelete(id) {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    showToast('Task deleted', 'error');
+  }
+
+  function openEdit(task) { setEditTask(task); setModal('task'); }
+
+  /* ── Guard: not logged in ── */
+  if (!currentUser) return e(React.Fragment, null,
+    e(AuthPage, {onLogin:handleLogin}),
+    toast && e(Toast, {...toast, onDone:()=>setToast(null)})
+  );
+
+  /* ── Stats ── */
+  const mine   = tasks.filter(t => t.userId === currentUser.id);
+  const total  = mine.length;
+  const done   = mine.filter(t => t.status === 'done').length;
+  const inProg = mine.filter(t => t.status === 'in-progress').length;
+  const today  = new Date().toISOString().split('T')[0];
+  const overdue = mine.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+  const pct    = total ? Math.round(done / total * 100) : 0;
+
+  /* ── Filter + search + sort ── */
+  let filtered = mine.filter(t => {
+    if (filter === 'todo')        return t.status === 'todo';
+    if (filter === 'in-progress') return t.status === 'in-progress';
+    if (filter === 'done')        return t.status === 'done';
+    if (filter === 'overdue')     return t.dueDate && t.dueDate < today && t.status !== 'done';
+    if (filter === 'high')        return t.priority === 'high';
+    return true;
+  });
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    filtered = filtered.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      t.description.toLowerCase().includes(q) ||
+      t.category.toLowerCase().includes(q)
+    );
+  }
+  filtered = [...filtered].sort((a, b) => {
+    if (sortBy === 'created')  return b.createdAt - a.createdAt;
+    if (sortBy === 'due')      return (a.dueDate||'z').localeCompare(b.dueDate||'z');
+    if (sortBy === 'priority') return {high:0,medium:1,low:2}[a.priority] - {high:0,medium:1,low:2}[b.priority];
+    return 0;
+  });
+
+  /* ── Render ── */
+  return e('div', {style:{display:'flex',flexDirection:'column',minHeight:'100vh'}},
+    /* Navbar */
+    e('nav', {className:'nav'},
+      e('div', {className:'nav-brand'}, e('i',{className:'ti ti-stack-2'}), 'TaskFlow'),
+      e('div', {className:'nav-right'},
+        e('div', {className:'avatar', title:currentUser.name}, currentUser.avatar),
+        e('span', {style:{fontSize:13,color:'#888',marginRight:4}}, currentUser.name),
+        e('button', {className:'btn btn-sm', onClick:handleLogout},
+          e('i',{className:'ti ti-logout'}), 'Sign out'
+        )
+      )
+    ),
+
+    /* Body */
+    e('div', {className:'layout-wrap'},
+      e('div', {className:'tasks-col'},
+        /* Header */
+        e('div', {className:'page-header'},
+          e('div', null,
+            e('h1', {className:'page-title'}, 'My tasks'),
+            e('p', {style:{fontSize:13,color:'#888',marginTop:2}},
+              `Hello, ${currentUser.name.split(' ')[0]} — ${total-done} task${total-done!==1?'s':''} remaining`)
+          ),
+          e('button', {className:'btn btn-primary',
+                       onClick:()=>{setEditTask(null); setModal('task')}},
+            e('i',{className:'ti ti-plus'}), 'New task'
+          )
+        ),
+
+        /* Stats */
+        e('div', {className:'stats-grid'},
+          e('div',{className:'stat-card'}, e('div',{className:'stat-label'},'Total'),      e('div',{className:'stat-value'},total)),
+          e('div',{className:'stat-card'}, e('div',{className:'stat-label'},'In progress'),e('div',{className:'stat-value'},inProg)),
+          e('div',{className:'stat-card'}, e('div',{className:'stat-label'},'Completed'),  e('div',{className:'stat-value'},done)),
+          e('div',{className:'stat-card'},
+            e('div',{className:'stat-label'},'Progress'),
+            e('div',{className:'stat-value'}, pct+'%'),
+            e('div',{className:'progress-bar'}, e('div',{className:'progress-fill',style:{width:pct+'%'}}))
+          ),
+          overdue > 0 && e('div',{className:'stat-card',style:{background:'#FEF2F2'}},
+            e('div',{className:'stat-label',style:{color:'#DC2626'}},'Overdue'),
+            e('div',{className:'stat-value',style:{color:'#DC2626'}},overdue)
+          )
+        ),
+
+        /* Search + Sort */
+        e('div', {style:{display:'flex',alignItems:'center',gap:12,marginBottom:'1rem',flexWrap:'wrap'}},
+          e('div', {className:'search-bar'},
+            e('i',{className:'ti ti-search'}),
+            e('input',{type:'text',placeholder:'Search tasks…',value:search,
+                       onChange:ev=>setSearch(ev.target.value)})
+          ),
+          e('select',{value:sortBy,onChange:ev=>setSortBy(ev.target.value),style:{width:'auto'}},
+            e('option',{value:'created'},'Newest first'),
+            e('option',{value:'due'},    'By due date'),
+            e('option',{value:'priority'},'By priority')
+          )
+        ),
+
+        /* Filters */
+        e('div', {className:'filters'},
+          ['all','todo','in-progress','done','high','overdue'].map(f =>
+            e('span',{key:f, className:'filter-chip'+(filter===f?' active':''),
+                      onClick:()=>setFilter(f)},
+              {all:'All',todo:'To do','in-progress':'In progress',done:'Done',
+               high:'High priority',overdue:'Overdue'}[f]
+            )
+          )
+        ),
+
+        /* Task list */
+        filtered.length === 0
+          ? e('div', {className:'empty-state'},
+              e('i',{className:'ti ti-clipboard-off'}),
+              e('p',{style:{fontWeight:600}}, 'No tasks here'),
+              e('p',{style:{fontSize:13,marginTop:4}}, search?'Try a different search.':'Add a new task to get started.'),
+              !search && e('button',{className:'btn btn-primary',style:{marginTop:'1rem'},
+                                    onClick:()=>{setEditTask(null);setModal('task')}},
+                e('i',{className:'ti ti-plus'}), 'Add first task')
+            )
+          : e('div', {className:'tasks-list'},
+              filtered.map(task =>
+                e(TaskCard, {key:task.id, task, selected:selected?.id===task.id,
+                             onToggle:handleToggle, onEdit:openEdit,
+                             onDelete:handleDelete,
+                             onSelect:t=>setSelected(t.id===selected?.id?null:t)})
+              )
+            )
+      ),
+
+      /* Detail panel */
+      selected && e(DetailPanel, {task:selected, onEdit:openEdit,
+                                   onDelete:handleDelete, onToggle:handleToggle,
+                                   onClose:()=>setSelected(null)})
+    ),
+
+    /* Modals */
+    modal==='task' && e(TaskModal, {task:editTask, onSave:handleSave,
+                                    onClose:()=>{setModal(null);setEditTask(null)}}),
+
+    /* Toast */
+    toast && e(Toast, {...toast, onDone:()=>setToast(null)})
+  );
+}
+
+/* ── Bootstrap ── */
+const e = React.createElement;
+ReactDOM.render(e(App), document.getElementById('root'));
+</script>
+</body>
+</html>
